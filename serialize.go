@@ -9,7 +9,7 @@ import (
 
 const encVer = int16(1)
 
-var header = []byte("tdigest!")
+var header = []byte("T")
 
 // MarshalBinary serializes the digest as a sequence of bytes suitable for
 // deserialization by UnmarshalBinary. The idea for this was taken from
