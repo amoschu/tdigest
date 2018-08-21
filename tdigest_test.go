@@ -4,8 +4,8 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/amoschu/tdigest"
 	"github.com/gonum/stat/distuv"
-	"github.com/influxdata/tdigest"
 )
 
 const (
