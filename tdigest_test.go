@@ -227,11 +227,10 @@ func TestTdigest_CDFs(t *testing.T) {
 var quantiles = []float64{0.1, 0.5, 0.9, 0.99, 0.999}
 
 func BenchmarkTDigest_Add(b *testing.B) {
+	td := tdigest.NewWithCompression(1000)
+	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		td := tdigest.NewWithCompression(1000)
-		for _, x := range NormalData {
-			td.Add(x, 1)
-		}
+		td.Add(NormalData[n%len(NormalData)], 1)
 	}
 }
 func BenchmarkTDigest_Quantile(b *testing.B) {
