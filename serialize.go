@@ -15,15 +15,15 @@ var header = []byte("tdigest!")
 // deserialization by UnmarshalBinary. The idea for this was taken from
 // https://github.com/spenczar/tdigest.
 func (t *TDigest) MarshalBinary() ([]byte, error) {
+	t.process()
+
 	w := binwriter{}
 	w.Write(header)
 	w.Write(encVer)
 	w.Write(t.Compression)
 	w.Write(int32(t.maxProcessed))
-	// FIXME: Is serializing unprocessed necessary?
 	w.Write(int32(t.maxUnprocessed))
 	w.Write(t.processedWeight)
-	w.Write(t.unprocessedWeight) // FIXME: Is serializing unprocessed necessary?
 	w.Write(t.min)
 	w.Write(t.max)
 	w.Write(int32(len(t.cumulative)))
@@ -31,12 +31,6 @@ func (t *TDigest) MarshalBinary() ([]byte, error) {
 		w.Write(c)
 	}
 	w.Write(int32(t.processed.Len()))
-	for _, c := range t.processed {
-		w.Write(c.Mean)
-		w.Write(c.Weight)
-	}
-	// FIXME: Is serializing unprocessed necessary?
-	w.Write(int32(t.unprocessed.Len()))
 	for _, c := range t.processed {
 		w.Write(c.Mean)
 		w.Write(c.Weight)
@@ -81,7 +75,7 @@ func (t *TDigest) UnmarshalBinary(p []byte) error {
 	r.Read(&n)
 	t.maxUnprocessed = int(n)
 	r.Read(&t.processedWeight)
-	r.Read(&t.unprocessedWeight)
+	t.unprocessedWeight = 0
 	r.Read(&t.min)
 	r.Read(&t.max)
 
@@ -105,16 +99,7 @@ func (t *TDigest) UnmarshalBinary(p []byte) error {
 	}
 
 	r.Read(&n)
-	t.unprocessed = make([]Centroid, n, t.maxUnprocessed+1)
-	for i := 0; i < int(n); i++ {
-		centroid := Centroid{}
-		r.Read(&c)
-		centroid.Mean = c
-		r.Read(&c)
-		centroid.Weight = c
-
-		t.unprocessed[i] = centroid
-	}
+	t.unprocessed = make([]Centroid, 0, t.maxUnprocessed+1)
 	return r.err
 }
 
