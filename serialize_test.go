@@ -1,6 +1,8 @@
 package tdigest_test
 
 import (
+	"bytes"
+	"compress/gzip"
 	"testing"
 
 	"github.com/amoschu/tdigest"
@@ -55,5 +57,48 @@ func TestTdigest_MarshalUnmarshal(t *testing.T) {
 				float64(i), tnormal.Quantile(float64(i)/100), normalQ[i],
 			)
 		}
+	}
+}
+
+var benchResult interface{}
+
+func BenchmarkTDigest_MarshalBinary(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		benchResult, _ = NormalDigest.MarshalBinary()
+	}
+}
+
+func BenchmarkTDigest_UnmarshalBinary(b *testing.B) {
+	d := tdigest.NewWithCompression(420)
+	p, err := NormalDigest.MarshalBinary()
+	if err != nil {
+		b.Fatalf("failed to marshal NormalDigest (%s)", err)
+	}
+
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		benchResult = d.UnmarshalBinary(p)
+	}
+}
+
+func BenchmarkTDigest_MarshalBinary_GzipDefaultCompression(b *testing.B) {
+	p, err := NormalDigest.MarshalBinary()
+	buf := bytes.Buffer{}
+	buf.Grow(len(p))
+	w := gzip.NewWriter(&buf)
+
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		b.StopTimer()
+		buf.Reset()
+		w.Reset(&buf)
+		b.StartTimer()
+
+		p, err = NormalDigest.MarshalBinary()
+		if err != nil {
+			b.Fatalf("failed to marshal NormalDigest (%s)", err)
+		}
+		benchResult, _ = w.Write(p)
+		benchResult = w.Flush()
 	}
 }
