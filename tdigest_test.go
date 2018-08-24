@@ -233,6 +233,7 @@ func BenchmarkTDigest_Add(b *testing.B) {
 		td.Add(NormalData[n%len(NormalData)], 1)
 	}
 }
+
 func BenchmarkTDigest_Quantile(b *testing.B) {
 	td := tdigest.NewWithCompression(1000)
 	for _, x := range NormalData {
@@ -244,5 +245,19 @@ func BenchmarkTDigest_Quantile(b *testing.B) {
 		for _, q := range quantiles {
 			x += td.Quantile(q)
 		}
+	}
+}
+
+func BenchmarkTDigest_AddQuantile(b *testing.B) {
+	rand.Seed(1234567)
+	td := tdigest.NewWithCompression(1000)
+	for _, x := range NormalData {
+		td.Add(x, 1)
+	}
+	b.ResetTimer()
+	var x float64
+	for n := 0; n < b.N; n++ {
+		td.Add(NormalData[n%len(NormalData)], 1)
+		x += td.Quantile(rand.Float64())
 	}
 }
